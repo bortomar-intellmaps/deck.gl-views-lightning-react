@@ -1,0 +1,35 @@
+{
+  "name": "deckgl-3d-tiles",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "main": "src/index.js",
+  "dependencies": {
+    "@luma.gl/core": "^8.5.21",
+    "deck.gl": "^8.9.33",
+    "luma.gl": "^7.3.2",
+    "primeflex": "^3.3.1",
+    "primeicons": "^6.0.1",
+    "primereact": "^10.2.1",
+    "react": "17.0.0",
+    "react-dom": "17.0.0",
+    "react-scripts": "3.4.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.2",
+    "typescript": "3.8.3",
+    "vite": "^4.4.2"
+  },
+  "scripts": {
+    "start": "vite --host",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
+}
