@@ -8,7 +8,6 @@ import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import "primeflex/primeflex.css";
 import { Slider } from "primereact/slider";
-import { Button } from "primereact/button";
 import {
   DirectionalLight,
   LightingEffect,
@@ -341,7 +340,6 @@ const App = () => {
           step={1}
           className="w-full"
         />
-        {/* <Button onClick={(e) => getState("test")} label="state" /> */}
       </div>
     </div>
   );
