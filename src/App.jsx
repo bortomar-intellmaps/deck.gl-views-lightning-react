@@ -2,13 +2,19 @@ import React, { useCallback, useRef, useState } from "react";
 import DeckGL from "@deck.gl/react";
 import { BitmapLayer, GeoJsonLayer, PointCloudLayer } from "@deck.gl/layers";
 import { TileLayer } from "@deck.gl/geo-layers";
-import { FirstPersonView, COORDINATE_SYSTEM } from "@deck.gl/core";
+import { FirstPersonView, COORDINATE_SYSTEM, MapView } from "@deck.gl/core";
 import "primereact/resources/themes/lara-light-indigo/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import "primeflex/primeflex.css";
 import { Slider } from "primereact/slider";
-import { DirectionalLight, LightingEffect, SimpleMeshLayer } from "deck.gl";
+import { Button } from "primereact/button";
+import {
+  DirectionalLight,
+  LightingEffect,
+  OrbitView,
+  SimpleMeshLayer,
+} from "deck.gl";
 import { SphereGeometry } from "@luma.gl/core";
 
 const sphere = new SphereGeometry({
@@ -20,39 +26,55 @@ const sphere = new SphereGeometry({
 const INITIAL_VIEW_STATE = {
   latitude: 50.1025731518377,
   longitude: 14.579345887998954,
-  pitch: 0,
   bearing: 0,
-  minZoom: 2,
-  maxZoom: 30,
+  // minZoom: 2,
+  // maxZoom: 30,
+  zoom: -1,
   maxPitch: 89,
   mainPitch: -89,
-  zoom: 1.64214614749443,
-  position: [-40, -160, 100],
+  pitch: 0,
+  rotationX: 45,
+  position: [25, -60, 50],
+  target: [25, 25, 20],
 };
 
 const App = () => {
   const [initialViewState, setInitialViewState] = useState(INITIAL_VIEW_STATE);
-  const [clickCoords, setClickCoords] = useState(500);
-  const [views, setViews] = useState(500);
+
   const [cntrlr, setCntrlr] = useState(true);
   const [x, setX] = useState(50);
   const [y, setY] = useState(0);
   const [z, setZ] = useState(50);
   const deckRef = useRef(null);
 
-  const foo = () => {
-    setZ(z + 5);
-    // console.log(pc);
-    // const tmp = setInitialViewState({
-    //   ...initialViewState,
-    //   position: [
-    //     initialViewState.position[0],
-    //     initialViewState.position[1],
-    //     initialViewState.position[2] + 100,
-    //   ],
-    // });
-  };
   const renderLayers = () => {
+    const gjsnPoint = new GeoJsonLayer({
+      id: "gjsn-point",
+      // data: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/bart.geo.json',
+      data: {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [-10, -10, 20],
+            },
+          },
+        ],
+      },
+      coordinateOrigin: [14.579345887998954, 50.1025731518377],
+      coordinateSystem: COORDINATE_SYSTEM.METER_OFFSETS,
+      pointBillboard: true,
+      filled: true,
+      pointRadiusUnits: "pixels",
+      pointRadiusScale: 10,
+      // pointAntialiasing: true,
+      pointType: "circle",
+      getRadius: 5,
+      getFillColor: [0, 255, 0, 255],
+    });
+
     const gjsn = new GeoJsonLayer({
       id: "gjsn",
       // data: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/bart.geo.json',
@@ -81,8 +103,8 @@ const App = () => {
           },
         ],
       },
-      coordinateOrigin: [14.578758657675024, 50.10260379749232],
-      coordinateSystem: COORDINATE_SYSTEM.METER_OFFSETS,
+      coordinateOrigin: [0, 0, 0],
+      coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
       extruded: true,
       getElevation: 50,
       // material: false,
@@ -112,8 +134,8 @@ const App = () => {
       },
     });
 
-    const layer = new PointCloudLayer({
-      id: "PointCloudLayer",
+    const pcl = new PointCloudLayer({
+      id: "pcl",
       // data: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/pointcloud.json',
       data: [
         {
@@ -130,12 +152,12 @@ const App = () => {
       // sizeUnits: 'pixels',
       /* props inherited from Layer class */
       // autoHighlight: false,
-      coordinateOrigin: [14.578758657675024, 50.10260379749232],
-      coordinateSystem: COORDINATE_SYSTEM.METER_OFFSETS,
+      coordinateOrigin: [0, 0, 0],
+      coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
       // highlightColor: [0, 0, 128, 128],
       // modelMatrix: null,
       // opacity: 1,
-      pickable: true,
+      // pickable: true,
 
       // onDragStart(info) {
       //   setCntrlr(false);
@@ -156,8 +178,8 @@ const App = () => {
       //   diffuse: 0.5,
       // },
     });
-    const layer2 = new SimpleMeshLayer({
-      id: "PointCloudLayer2",
+    const sml = new SimpleMeshLayer({
+      id: "sml",
       // data: 'https://raw.githubusercontent.com/visgl/deck.gl-data/master/website/pointcloud.json',
       data: [
         {
@@ -173,19 +195,14 @@ const App = () => {
       opacity: 1,
       getColor: [25, 255, 150],
       getPosition: (d) => d.position,
-      coordinateOrigin: [14.578758657675024, 50.10260379749232],
+      coordinateOrigin: [14.579345887998954, 50.1025731518377],
 
       coordinateSystem: COORDINATE_SYSTEM.METER_OFFSETS,
     });
 
-    return [osm, layer, gjsn, layer2];
+    return [osm, pcl, gjsn, gjsnPoint, sml];
   };
 
-  const ch = useCallback(({ viewId, viewState }) => {
-    // console.log(viewId);
-    // console.log(viewState);
-    setInitialViewState(viewState);
-  }, []);
   const effects = [
     new LightingEffect({
       dir: new DirectionalLight({
@@ -195,23 +212,99 @@ const App = () => {
       }),
     }),
   ];
+
+  const layerFiler = useCallback(({ layer, viewport }) => {
+    if (
+      viewport.id === "mini-map" &&
+      ["openstreet", "sml", "gjsn-point"].includes(layer.id)
+    )
+      return false;
+    if (viewport.id === "FirstPersonView" && ["gjsn", "pcl"].includes(layer.id))
+      return false;
+    return true;
+  });
+
+  const [viewState, setViewState] = useState({
+    fpv: {
+      latitude: 50.1025731518377,
+      longitude: 14.579345887998954,
+      bearing: 0,
+      maxPitch: 89,
+      mainPitch: -89,
+      pitch: 0,
+      position: [25, -60, 50],
+    },
+    "mini-map": {
+      // minZoom: 2,
+      // maxZoom: 30,
+      zoom: 0,
+      maxPitch: 89,
+      mainPitch: -89,
+      rotationX: 0,
+      rotationOrbit: 0,
+      target: [25, 25, 20],
+    },
+  });
+
+  const onViewStateChange = useCallback(({ viewId, viewState }) => {
+    setViewState((current) => {
+      if (viewState.bearing != undefined) {
+        current["mini-map"].rotationOrbit = viewState.bearing;
+        current["mini-map"].rotationX = viewState.pitch;
+      }
+      if (viewState.rotationX != undefined) {
+        current["fpv"].bearing = viewState.rotationOrbit;
+        current["fpv"].pitch = viewState.rotationX;
+      }
+
+      return {
+        ...current,
+        [viewId]: viewState,
+      };
+    });
+  }, []);
+
+  const onViewStateChangeNonCache = (data) => {
+    setViewState({
+      ...viewState,
+      [data.viewId]: data.viewState,
+    });
+  };
+  // ======================================
+
+  const getState = useCallback((id) => {
+    console.log(deckRef.current.deck);
+    console.log(deckRef.current.deck.viewManager.getViewState("fpv"));
+  });
+
   return (
     <div className="App">
       <DeckGL
         ref={deckRef}
-        layers={renderLayers()}
         effects={effects}
+        layers={renderLayers()}
+        layerFilter={layerFiler}
         // controller={true}
-        onViewStateChange={ch}
-        // initialViewState={initialViewState}
-        viewState={initialViewState}
+        // initialViewState={viewState}
+        onViewStateChange={onViewStateChange}
+        viewState={viewState}
         views={[
           new FirstPersonView({
+            id: "fpv",
             focalDistance: 100,
             fovy: 80,
             near: 0.1,
             far: 1000,
             controller: cntrlr,
+          }),
+          new OrbitView({
+            id: "mini-map",
+            x: "70%",
+            y: "70%",
+            height: "25%",
+            width: "25%",
+            clear: true,
+            controller: { doubleClickZoom: false, scrollZoom: false },
           }),
         ]}
       />
@@ -240,16 +333,15 @@ const App = () => {
           className="w-full"
         />
 
-        <div>
-          <Slider
-            onChange={(e) => setY(e.value)}
-            value={y}
-            min={0}
-            max={50}
-            step={1}
-            className="w-full"
-          />
-        </div>
+        <Slider
+          onChange={(e) => setY(e.value)}
+          value={y}
+          min={0}
+          max={50}
+          step={1}
+          className="w-full"
+        />
+        {/* <Button onClick={(e) => getState("test")} label="state" /> */}
       </div>
     </div>
   );
